@@ -1,7 +1,9 @@
 api.scpslgame.com
+auth.scpslgame.com
 betawiki.scpslgame.com
 bhs1.scpslgame.com
 cdn.scpslgame.com
+cloud.scpslgame.com
 en.scpslgame.com
 fra1.scpslgame.com
 git.scpslgame.com
@@ -11,6 +13,7 @@ gra2.scpslgame.com
 gra3.scpslgame.com
 hub.scpslgame.com
 lon1.scpslgame.com
+mailing.scpslgame.com
 mtl1.scpslgame.com
 patreon.scpslgame.com
 pl.scpslgame.com
@@ -18,9 +21,17 @@ privwiki.scpslgame.com
 proxy.scpslgame.com
 registry.scpslgame.com
 ru.scpslgame.com
+sandbox.scpslgame.com
+scpslgame.com
+servers.scpslgame.com
 slac.scpslgame.com
+sql.scpslgame.com
 sso.scpslgame.com
+staff.scpslgame.com
 status.scpslgame.com
+support.scpslgame.com
+test.scpslgame.com
+test2.scpslgame.com
 waw1.scpslgame.com
 waw2.scpslgame.com
-scpslgame.com
+www.scpslgame.com
