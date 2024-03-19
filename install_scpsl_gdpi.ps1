@@ -1,3 +1,13 @@
+function DeleteLeftoverFiles
+{	
+	Param (
+		[string]$old_folder_path
+	)
+	
+	# Delete existing installation folder
+	if (Test-Path $old_folder_path) {[void](Remove-Item $old_folder_path -Recurse -Confirm:$False -Force)}
+}
+
 # Set title and advertisement
 
 $host.ui.RawUI.WindowTitle = "Welcome To Hell SCP:SL GDPI downloader and installer"
@@ -19,184 +29,75 @@ Set-Variable -Name 'ConfirmPreference' -Value 'None' -Scope Global
 # Determining Windows architecture
 $os_type = (Get-WmiObject -Class Win32_ComputerSystem).SystemType -match ‘(x64)’
 
-# Finding program files folder
+# Finding GoodbyeDPI folder
 $gdpi_folder = "WTH_GoodbyeDPI"
-if ($os_type -eq "True") {
-	$path = [Environment]::GetEnvironmentVariable("ProgramFiles") + "\" + $gdpi_folder
+$path = ""
+if ($os_type -eq $True) {
+	$path = [Environment]::GetEnvironmentVariable("ProgramFiles") + "\" + $gdpi_folder + "\x86_64"
 }
 else
 {
-	$path = [Environment]::GetEnvironmentVariable("ProgramFiles(x86)") + "\" + $gdpi_folder
+	$path = [Environment]::GetEnvironmentVariable("ProgramFiles(x86)") + "\" + $gdpi_folder + "\x86"
 }
 
-Write-Output "Path: " + $path
+# Checking if GoodbyeDPI is already installed. Ask to uninstall. If not accepted, exit script.
+$gdpi_service_exists = Get-Service -Name "WTH_GoodbyeDPI" -ErrorAction SilentlyContinue
 
-# Checking if GoodbyeDPI is already installed.
-
-Write-Output "Проверяем, включена ли синхронизация времени по сети"
-
-if ((CheckIfNtpClientIsRunning) -eq $False)
-{
-	$result = [System.Windows.Forms.MessageBox]::Show('Не включена синхронизация времени через интернет.' + [System.Environment]::NewLine + 'Без этого невозможно установить SSL соединение с центральным сервером SCP:SL.' + [System.Environment]::NewLine + [System.Environment]::NewLine + 'Включить синхронизацию времени через интернет?' , "Синхронизация времени" , [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Error)
+if ($gdpi_service_exists.Length -gt 0) {
+	$result = [System.Windows.Forms.MessageBox]::Show('Найден установленный ранее сервис WTH_GoodbyeDPI!' + [System.Environment]::NewLine + [System.Environment]::NewLine + 'Удалить?' , "WTH SCP:SL GoodbyeDPI" , [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Error)
 	if ($result -eq 'Yes') {
-		RestartNtpClient -setNtpServer $False
+		# Deleting existing GoodbyeDPI service
+		[void](sc.exe stop "WTH_GoodbyeDPI")
+		[void](sc.exe delete "WTH_GoodbyeDPI")
+		DeleteLeftoverFiles -old_folder_path (Split-Path $path -Parent)
+	}
+	if ($result -eq 'No') {
+		exit
 	}
 }
 
-Write-Output "Проверяем, работает ли соединение с текущим NTP сервером"
+$result = [System.Windows.Forms.MessageBox]::Show('Скрипт установит сервис WTH_GoodbyeDPI для исправления проблемы с соединением с интернет-ресурсами игры SCP: Secret Laboratory.' + [System.Environment]::NewLine + [System.Environment]::NewLine + 'Установить?' , "WTH SCP:SL GoodbyeDPI" , [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Question)
+if ($result -eq 'Yes') {
 
-if ((CheckCurrentNtpServer) -eq $False)
-{
-	$result = [System.Windows.Forms.MessageBox]::Show('Синхронизация времени, необходимая для установки SSL соединения с центральным сервером SCP:SL, с установленным NTP сервером, невозможна! Сервер не отвечает на запросы.' + [System.Environment]::NewLine + 'Изменить NTP сервер на ru.pool.ntp.org?' , "Синхронизация времени" , [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Error)
-	if ($result -eq 'Yes') {
-		RestartNtpClient -setNtpServer $True
+	$path = Split-Path (Split-Path $path -Parent) -Parent
+
+	DeleteLeftoverFiles -old_folder_path "$path\$gdpi_folder"
+	
+	[void](New-Item -Path "$path\$gdpi_folder" -ItemType Directory -Confirm:$False -Force)
+
+	# Downloading latest GoodbyeDPI to installtion folder
+	Invoke-RestMethod 'https://api.github.com/repos/ValdikSS/GoodbyeDPI/releases/latest' | % assets | ? name -like "*.zip" | % { 
+		Invoke-WebRequest $_.browser_download_url -OutFile ("$path\" + $_.name) 
+		$gdpi_archive_name = $_.name
 	}
-}
 
-Write-Output "Проверяем, выставлен ли NTP сервер ru.pool.ntp.org"
+	# Unpack downloaded archive
+	Expand-Archive -Path "$path\$gdpi_archive_name" -DestinationPath $path
+	$unpacked_folder = "$path\$gdpi_archive_name".TrimEnd('.zip')
+	Move-Item -Path "$unpacked_folder\*" -Destination "$path\$gdpi_folder"
 
-$ntp_server = (w32tm /query /source) -Split ","
-$ntp_server = $ntp_server[0].Trim(" ")
-if (-Not($ntp_server -Match 'ru.pool.ntp.org'))
-{
-	$result = [System.Windows.Forms.MessageBox]::Show('Рекомендуется изменить NTP сервер на ru.pool.ntp.org' + [System.Environment]::NewLine + 'Выставить другой NTP сервер?' , "Синхронизация времени" , [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Question)
-	if ($result -eq 'Yes') {
-		SetNtpServer
-	}
-}
+	# Clean leftover zip file
+	if (Test-Path "$path\$gdpi_archive_name") {[void](Remove-Item "$path\$gdpi_archive_name" -Confirm:$False -Force)}
 
-# Checking if DNS servers are 1.1.1.1 and 1.0.0.1 for active network adapter with internet connection
+	# Download SCP:SL website list File
+	Start-BitsTransfer -Source 'https://raw.githubusercontent.com/REALMWTH/Powershell-GDPI-Install-Script/main/scpsl_domains.txt' -Destination "$path\$gdpi_folder"
 
-Write-Output "Проверяем, установлены ли рекомендованные DNS серверы на физическом сетевом интерфейсе, подключенному к интернету"
-
-$PhysAdapter = Get-NetAdapter -Physical
-$DnsAddress = $PhysAdapter | Get-DnsClientServerAddress -AddressFamily IPv4
-$PrimaryDNS = '1.1.1.1'
-$SecondaryDNS = '1.0.0.1'
-
-if (-Not($DnsAddress.ServerAddresses[0] -eq $PrimaryDNS -and $DnsAddress.ServerAddresses[1] -eq $SecondaryDNS))
-{
-	$result = [System.Windows.Forms.MessageBox]::Show('Рекомендуется установить Cloudflare DNS серверы для текущего сетевого интерфейса. Установить?' , "" , [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Question)
-	if ($result -eq 'Yes') {
-		$PhysAdapter | Get-DnsClientServerAddress -AddressFamily IPv4 | Set-DnsClientServerAddress -ServerAddresses ($PrimaryDNS, $SecondaryDNS)
-		Clear-DnsClientCache
-	}
-}
-
-# Checking if internet connection to download websites is working
-
-Write-Output "Проверяем возможность установить соединение с сайтами для дальнейшего скачивания зависимостей SCP:SL"
-
-$ProgressPreference = 'SilentlyContinue'
-
-try {
-    [void](Invoke-WebRequest -URI "https://download.microsoft.com" -UseBasicParsing)
-} catch {
-	[System.Windows.Forms.MessageBox]::Show('Невозможно установить соединение с сайтом download.microsoft.com' + [System.Environment]::NewLine + [System.Environment]::NewLine + 'Проверьте ваше интернет-соединение.' , "Ошибка" , [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error)
-	exit
-}
-
-try {
-    [void](Invoke-WebRequest -URI "https://download.mono-project.com" -UseBasicParsing)
-} catch {
-	[System.Windows.Forms.MessageBox]::Show('Невозможно установить соединение с сайтом download.mono-project.com' + [System.Environment]::NewLine + [System.Environment]::NewLine + 'Проверьте ваше интернет-соединение.' , "Ошибка" , [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error)
-	exit
-}
-
-try {
-    [void](Invoke-WebRequest -URI "https://dot.net" -UseBasicParsing)
-} catch {
-	[System.Windows.Forms.MessageBox]::Show('Невозможно установить соединение с сайтом dot.net' + [System.Environment]::NewLine + [System.Environment]::NewLine + 'Проверьте ваше интернет-соединение.' , "Ошибка" , [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error)
-	exit
-}
-
-$ProgressPreference = 'Continue'
-
-Write-Output "Устанавливаем диспетчер пакетов NuGet"
-[void](Get-PackageProvider -Name "NuGet" -ErrorAction SilentlyContinue -ForceBootstrap)
-
-Write-Output "Проверяем политику установки для PSGallery"
-$policy = Get-PSRepository -Name PSGallery
-
-if ($policy)
-{
-	if (-Not($policy.InstallationPolicy -eq 'Trusted'))
-	{
-		Write-Output "Выставляем доверенную политику установки для PSGallery"
-		[void](Set-PSRepository PSGallery -InstallationPolicy Trusted)
+	# Install Service
+	if ($os_type -eq $True) {
+		$exe_path = [Environment]::GetEnvironmentVariable("ProgramFiles") + "\" + $gdpi_folder + "\x86_64\goodbyedpi.exe"
 	}
 	else
 	{
-		Write-Output "Политика установки для PSGallery уже была установлена как доверенная"
+		$exe_path = [Environment]::GetEnvironmentVariable("ProgramFiles(x86)") + "\" + $gdpi_folder + "\x86\goodbyedpi.exe"
 	}
-}
 
-$result = [System.Windows.Forms.MessageBox]::Show('Установить Microsoft Visual C++ Redistributable?' , "" , [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Question)
-if ($result -eq 'Yes') {
-	Write-Output "Устанавливаем Powershell модуль VcRedist"
-	[void](Install-Module -Name VcRedist -Confirm:$False -Force)
-
-	Write-Output "Удаляем все версии Microsoft Visual C++ Redistributable"
-	[void](Uninstall-VcRedist -Confirm:$False)
-
-	$temp_dir = "C:\WTH_Temp"
-	if (test-path $temp_dir) {[void](Remove-Item $temp_dir -Recurse -Confirm:$False -Force)}
-	[void](New-Item -Path 'C:\WTH_Temp' -ItemType Directory -Confirm:$False -Force)
-
-	Write-Output "DirectX Redist (June 2010)"
-	$directx = "$temp_dir\directx_Jun2010_redist.exe"
-	Start-BitsTransfer -Source 'https://download.microsoft.com/download/8/4/A/84A35BF1-DAFE-4AE8-82AF-AD2AE20B6B14/directx_Jun2010_redist.exe' -Destination $directx
-	cmd /c start /wait $directx /Q /C /T:"$temp_dir\DirectX\"
-	cmd /c start /wait "$temp_dir\DirectX\DXSETUP.exe" /silent
-	del $directx
-	if (test-path $temp_dir) {[void](Remove-Item $temp_dir\DirectX -Recurse -Confirm:$False -Force)}
-
-	Write-Output "Microsoft Visual C++ 2005-2022"
-	$Redists_unsupported = Get-VcList -Export Unsupported | Where-Object { $_.Release -in "2005", "2008", "2010" } | Save-VcRedist -Path $temp_dir | Install-VcRedist -Silent -Force
-	$Redists = Get-VcList -Release 2012, 2013, 2022 | Save-VcRedist -Path $temp_dir | Install-VcRedist -Silent -Force
-
-	Remove-Module -Name VcRedist
-	Uninstall-Module -Name VcRedist -AllVersions -Force
-}
-
-if (-Not(Test-Path -Path $env:ProgramFiles\Mono\bin\mono.exe -PathType Leaf))
-{
-	$result = [System.Windows.Forms.MessageBox]::Show('Установить Mono?' , "" , [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Question)
-	if ($result -eq 'Yes') {
-		Write-Output "Mono Stable"
-		$MonoPathx86 = "$temp_dir\mono-latest-x86-stable.msi"
-		$MonoPathx64 = "$temp_dir\mono-latest-x64-stable.msi"
-		Start-BitsTransfer -Source 'https://download.mono-project.com/archive/mono-latest-x86-stable.msi' -Destination $MonoPathx86
-		Start-BitsTransfer -Source 'https://download.mono-project.com/archive/mono-latest-x64-stable.msi' -Destination $MonoPathx64
-		cmd /c start /wait msiexec /i "$MonoPathx86" /q
-		del $MonoPathx86
-		cmd /c start /wait msiexec /i "$MonoPathx64" /q
-		del $MonoPathx64
-	}
-}
-
-$result = [System.Windows.Forms.MessageBox]::Show('Рекомендуется установить дополнительные зависимости. Установить?' , "" , [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Question)
-if ($result -eq 'Yes') {
-	Write-Output ".NET Framework 3.5 с пакетом обновления 1 (SP1)"
-	[void](Dism /online /Enable-Feature /FeatureName:"NetFx3" /quiet) 
-	Write-Output "DirectPlay"
-	[void](dism /online /Enable-Feature /FeatureName:DirectPlay /All /quiet)
+	[void](cmd.exe /c "sc create `"WTH_GoodbyeDPI`" binPath= `"$exe_path -5 --blacklist `"`"$path\$gdpi_folder\scpsl_domains.txt`"`"")
+	[void](sc.exe config "WTH_GoodbyeDPI" start= auto)
+	[void](sc.exe description "GoodbyeDPI" "Passive Deep Packet Inspection blocker and Active DPI circumvention utility. Affects SCP:SL Domains only.")
+	[void](sc.exe start "WTH_GoodbyeDPI")
 	
-	$dotnetscript = "$temp_dir\dotnet-install.ps1"
-	Start-BitsTransfer -Source 'https://dot.net/v1/dotnet-install.ps1' -Destination $dotnetscript
-	Write-Output ".NET Runtime 6"
-	[void](.$temp_dir/dotnet-install.ps1 -Channel 6.0 -Runtime windowsdesktop) 
-	Write-Output ".NET Runtime 7"
-	[void](.$temp_dir/dotnet-install.ps1 -Channel 7.0 -Runtime windowsdesktop) 
-	Write-Output ".NET Runtime 8"
-	[void](.$temp_dir/dotnet-install.ps1 -Channel 8.0 -Runtime windowsdesktop) 
-	
-	del $dotnetscript
+	$result = [System.Windows.Forms.MessageBox]::Show('Скрипт успешно установил сервис WTH_GoodbyeDPI.' + [System.Environment]::NewLine + [System.Environment]::NewLine + "Проверьте работоспособность списка серверов SCP:SL.", "WTH SCP:SL GoodbyeDPI" , [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
 }
-
-[void](Remove-Item $temp_dir -Recurse -Force -Confirm:$False)
-
-$result = [System.Windows.Forms.MessageBox]::Show('Рекомендуется перезагрузка. Перезагрузить?' , "Все зависимости успешно установлены!" , [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Question)
-if ($result -eq 'Yes') {
-	Restart-computer -Force -Confirm:$False
+if ($result -eq 'No') {
+	exit
 }
