@@ -85,8 +85,9 @@ if ($result -eq 'Yes') {
 	Expand-Archive -Path "$path\$gdpi_archive_name" -DestinationPath $path
 	$unpacked_folder = "$path\$gdpi_archive_name".TrimEnd('.zip')
 	Move-Item -Path "$unpacked_folder\*" -Destination "$path\$gdpi_folder"
-
-	# Clean leftover zip file
+	
+	# Delete leftovers
+	if (Test-Path "$unpacked_folder") {[void](Remove-Item "$unpacked_folder" -Confirm:$False -Force)}
 	if (Test-Path "$path\$gdpi_archive_name") {[void](Remove-Item "$path\$gdpi_archive_name" -Confirm:$False -Force)}
 
 	# Download SCP:SL website list File
