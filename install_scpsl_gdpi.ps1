@@ -44,17 +44,17 @@ else
 }
 
 # Checking if GoodbyeDPI is already installed. Ask to uninstall. If not accepted, exit script.
-Write-Output "Проверяем, установлен ли сервис WTH_GoodbyeDPI"
+Write-Output "Проверяем, установлен ли сервис WTH GoodbyeDPI"
 
-$gdpi_service_exists = Get-Service -Name "WTH_GoodbyeDPI" -ErrorAction SilentlyContinue
+$gdpi_service_exists = Get-Service -Name "WTH GoodbyeDPI" -ErrorAction SilentlyContinue
 
 if ($gdpi_service_exists.Length -gt 0) {
-	$result = [System.Windows.Forms.MessageBox]::Show('Найден установленный ранее сервис WTH_GoodbyeDPI!' + [System.Environment]::NewLine + [System.Environment]::NewLine + 'Удалить?' , "WTH SCP:SL GoodbyeDPI" , [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Error)
+	$result = [System.Windows.Forms.MessageBox]::Show('Найден установленный ранее сервис WTH GoodbyeDPI!' + [System.Environment]::NewLine + [System.Environment]::NewLine + 'Удалить?' , "WTH SCP:SL GoodbyeDPI" , [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Error)
 	if ($result -eq 'Yes') {
 		# Deleting existing GoodbyeDPI service
-		Write-Output "Останавливаем и удаляем сервис WTH_GoodbyeDPI"
-		[void](sc.exe stop "WTH_GoodbyeDPI")
-		[void](sc.exe delete "WTH_GoodbyeDPI")
+		Write-Output "Останавливаем и удаляем сервис WTH GoodbyeDPI"
+		[void](sc.exe stop "WTH GoodbyeDPI")
+		[void](sc.exe delete "WTH GoodbyeDPI")
 		DeleteLeftoverFiles -old_folder_path (Split-Path $path -Parent)
 	}
 	if ($result -eq 'No') {
@@ -62,7 +62,7 @@ if ($gdpi_service_exists.Length -gt 0) {
 	}
 }
 
-$result = [System.Windows.Forms.MessageBox]::Show('Скрипт установит сервис WTH_GoodbyeDPI для исправления проблемы с соединением с интернет-ресурсами игры SCP: Secret Laboratory.' + [System.Environment]::NewLine + [System.Environment]::NewLine + 'Установить?' , "WTH SCP:SL GoodbyeDPI" , [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Question)
+$result = [System.Windows.Forms.MessageBox]::Show('Скрипт установит сервис WTH GoodbyeDPI для исправления проблемы с соединением с интернет-ресурсами игры SCP: Secret Laboratory.' + [System.Environment]::NewLine + [System.Environment]::NewLine + 'Установить?' , "WTH SCP:SL GoodbyeDPI" , [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Question)
 if ($result -eq 'Yes') {
 
 	$path = Split-Path (Split-Path $path -Parent) -Parent
@@ -84,10 +84,10 @@ if ($result -eq 'Yes') {
 	
 	Expand-Archive -Path "$path\$gdpi_archive_name" -DestinationPath $path
 	$unpacked_folder = "$path\$gdpi_archive_name".TrimEnd('.zip')
-	Move-Item -Path "$unpacked_folder\*" -Destination "$path\$gdpi_folder"
+	[void](Move-Item -Path "$unpacked_folder\*" -Destination "$path\$gdpi_folder" -Force -Confirm:$False)
 	
 	# Delete leftovers
-	if (Test-Path "$unpacked_folder") {[void](Remove-Item "$unpacked_folder" -Confirm:$False -Force)}
+	if (Test-Path "$unpacked_folder") {[void](Remove-Item "$unpacked_folder" -Confirm:$False -Force -Recurse)}
 	if (Test-Path "$path\$gdpi_archive_name") {[void](Remove-Item "$path\$gdpi_archive_name" -Confirm:$False -Force)}
 
 	# Download SCP:SL website list File
@@ -96,7 +96,7 @@ if ($result -eq 'Yes') {
 	Start-BitsTransfer -Source 'https://raw.githubusercontent.com/REALMWTH/Powershell-GDPI-Install-Script/main/scpsl_domains.txt' -Destination "$path\$gdpi_folder"
 
 	# Install Service
-	Write-Output "Устанавливаем сервис WTH_GoodbyeDPI"
+	Write-Output "Устанавливаем сервис WTH GoodbyeDPI"
 	
 	if ($os_type -eq $True) {
 		$exe_path = [Environment]::GetEnvironmentVariable("ProgramFiles") + "\" + $gdpi_folder + "\x86_64\goodbyedpi.exe"
@@ -106,14 +106,14 @@ if ($result -eq 'Yes') {
 		$exe_path = [Environment]::GetEnvironmentVariable("ProgramFiles(x86)") + "\" + $gdpi_folder + "\x86\goodbyedpi.exe"
 	}
 
-	[void](cmd.exe /c "sc create `"WTH_GoodbyeDPI`" binPath= `"$exe_path -5 --blacklist `"`"$path\$gdpi_folder\scpsl_domains.txt`"`"")
-	[void](sc.exe config "WTH_GoodbyeDPI" start= auto)
-	[void](sc.exe description "GoodbyeDPI" "Passive Deep Packet Inspection blocker and Active DPI circumvention utility. Affects SCP:SL Domains only.")
+	[void](cmd.exe /c "sc create `"WTH GoodbyeDPI`" binPath= `"$exe_path -5 --blacklist `"`"$path\$gdpi_folder\scpsl_domains.txt`"`"")
+	[void](sc.exe config "WTH GoodbyeDPI" start= auto)
+	[void](sc.exe description "WTH GoodbyeDPI" "Passive Deep Packet Inspection blocker and Active DPI circumvention utility. Affects SCP:SL Domains only.")
 	
-	Write-Output "Запускаем сервис WTH_GoodbyeDPI"
-	[void](sc.exe start "WTH_GoodbyeDPI")
+	Write-Output "Запускаем сервис WTH GoodbyeDPI"
+	[void](sc.exe start "WTH GoodbyeDPI")
 	
-	$result = [System.Windows.Forms.MessageBox]::Show('Скрипт успешно установил сервис WTH_GoodbyeDPI.' + [System.Environment]::NewLine + [System.Environment]::NewLine + "Проверьте работоспособность списка серверов SCP:SL.", "WTH SCP:SL GoodbyeDPI" , [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
+	$result = [System.Windows.Forms.MessageBox]::Show('Скрипт успешно установил сервис WTH GoodbyeDPI.' + [System.Environment]::NewLine + [System.Environment]::NewLine + "Проверьте работоспособность списка серверов SCP:SL.", "WTH SCP:SL GoodbyeDPI" , [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
 }
 if ($result -eq 'No') {
 	exit
