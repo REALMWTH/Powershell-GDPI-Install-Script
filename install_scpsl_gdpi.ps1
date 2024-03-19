@@ -10,7 +10,7 @@ function DeleteLeftoverFiles
 
 # Set title and advertisement
 
-$host.ui.RawUI.WindowTitle = "Welcome To Hell SCP:SL GDPI downloader and installer"
+$host.ui.RawUI.WindowTitle = "Welcome To Hell SCP:SL GoodbyeDPI downloader and installer"
 Write-Host "Загрузчик и инсталлятор сервиса GoodbyeDPI для всех доменов SCP:SL от " -ForegroundColor white -nonewline
 Write-Host "Welcome To Hell" -ForegroundColor red
 Write-Host "https://discord.scpsl.ru" -ForegroundColor white -BackgroundColor darkred
