@@ -102,7 +102,7 @@ if ($result -eq 'Yes') {
 	}
 	else
 	{
-		$exe_path = [Environment]::GetEnvironmentVariable("ProgramFiles(x86)") + "\" + $winws_folder + "\x86\goodbyedpi.exe"
+		$exe_path = [Environment]::GetEnvironmentVariable("ProgramFiles(x86)") + "\" + $winws_folder + "\winws.exe"
 	}
 	
 	[void](cmd.exe /c "sc create `"WTH Winws`" binPath= `"$exe_path --wf-tcp=443 --wf-udp=443,50000-65535 --filter-udp=443 --hostlist=`"`"$path\$winws_folder\list-discord-scpsl.txt`"`" --dpi-desync=fake --dpi-desync-udplen-increment=10 --dpi-desync-repeats=6 --dpi-desync-udplen-pattern=0xDEADBEEF --dpi-desync-fake-quic=`"`"$path\$winws_folder\quic_initial_www_google_com.bin`"`" --new --filter-udp=50000-65535 --dpi-desync=fake,tamper --dpi-desync-any-protocol --dpi-desync-fake-quic=`"`"$path\$winws_folder\quic_initial_www_google_com.bin`"`" --new --filter-tcp=443 --hostlist=`"`"$path\$winws_folder\list-discord-scpsl.txt`"`" --dpi-desync=fake,split2 --dpi-desync-autottl=2 --dpi-desync-fooling=md5sig --dpi-desync-fake-tls=`"`"$path\$winws_folder\tls_clienthello_www_google_com.bin`"`"`"")
@@ -113,7 +113,6 @@ if ($result -eq 'Yes') {
 	[void](sc.exe start "WTH Winws")
 	
 	$result = [System.Windows.Forms.MessageBox]::Show('Скрипт успешно установил сервис WTH Winws.' + [System.Environment]::NewLine + [System.Environment]::NewLine + "Проверьте соединение с Discord и список серверов SCP:SL.", "WTH SCP:SL Winws" , [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
-	#>
 }
 if ($result -eq 'No') {
 	exit
