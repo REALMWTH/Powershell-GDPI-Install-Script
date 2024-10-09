@@ -31,6 +31,17 @@ Set-Variable -Name 'ConfirmPreference' -Value 'None' -Scope Global
 # Determining Windows architecture
 $os_type = (Get-WmiObject -Class Win32_ComputerSystem).SystemType -match ‘(x64)’
 
+$result = [System.Windows.Forms.MessageBox]::Show('Внимание!' + [System.Environment]::NewLine + [System.Environment]::NewLine + "Убедитесь, что у вас выключен VPN, GoodbyeDPI или Proxy. Этот обход конфликтует с VPN, Proxy и GoodbyeDPI.", "WTH SCP:SL Winws" , [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
+
+# Checking if Winws is already installed. Ask to uninstall. If not accepted, exit script.
+Write-Output "Проверяем, установлен ли GoodbyeDPI"
+$goodbyedpi = Get-Process goodbyedpi
+
+if ($goodbyedpi) {
+	$result = [System.Windows.Forms.MessageBox]::Show('Найден работающий GoodbyeDPI!' + [System.Environment]::NewLine + [System.Environment]::NewLine + "Вам необходимо удалить, либо временно выключить GoodbyeDPI так как он конфликтует с Winws. Сейчас он будет принудительно выключен.", "WTH SCP:SL Winws" , [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error)
+	[void]($goodbyedpi | Stop-Process -Force)
+}
+
 # Finding Winws folder
 $winws_folder = "WTH_Winws"
 $path = ""
@@ -61,7 +72,7 @@ if ($winws_service_exists.Length -gt 0) {
 	}
 }
 
-$result = [System.Windows.Forms.MessageBox]::Show('Скрипт установит сервис WTH Winws для исправления проблемы с соединением с интернет-ресурсами игры SCP: Secret Laboratory.' + [System.Environment]::NewLine + [System.Environment]::NewLine + 'Установить?' , "WTH SCP:SL Winws" , [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Question)
+$result = [System.Windows.Forms.MessageBox]::Show('Скрипт установит сервис WTH Winws для исправления проблемы с соединением с интернет-ресурсами игры SCP: Secret Laboratory, а также восстановит работоспособность Discord.' + [System.Environment]::NewLine + [System.Environment]::NewLine + 'Установить?' , "WTH SCP:SL Winws" , [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Question)
 if ($result -eq 'Yes') {
 
 	$path = Split-Path $path -Parent
