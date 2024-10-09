@@ -12,7 +12,6 @@ function DeleteLeftoverFiles
 }
 
 # Set title and advertisement
-
 $host.ui.RawUI.WindowTitle = "Welcome To Hell SCP:SL Winws downloader and installer"
 Write-Host "Загрузчик и инсталлятор сервиса Winws для всех доменов SCP:SL и Discord от " -ForegroundColor white -nonewline
 Write-Host "Welcome To Hell" -ForegroundColor red
@@ -89,7 +88,7 @@ if ($result -eq 'Yes') {
 	if (Test-Path "$unpacked_folder") {[void](Remove-Item "$unpacked_folder" -Confirm:$False -Force -Recurse)}
 	if (Test-Path "$path\$winws_archive_name") {[void](Remove-Item "$path\$winws_archive_name" -Confirm:$False -Force)}
 	
-	# Download SCP:SL website list File
+	# Download SCP:SL and Discord domains list File
 	Write-Output "Скачиваем whitelist доменов SCP: Secret Laboratory и Discord"
 		
 	Start-BitsTransfer -Source 'https://raw.githubusercontent.com/REALMWTH/Powershell-GDPI-Install-Script/refs/heads/main/list-discord-scpsl.txt' -Destination "$path\$winws_folder"
@@ -105,12 +104,11 @@ if ($result -eq 'Yes') {
 		$exe_path = [Environment]::GetEnvironmentVariable("ProgramFiles(x86)") + "\" + $winws_folder + "\winws.exe"
 	}
 	
-	[void](cmd.exe /c "sc create `"WTH Winws`" binPath= `"$exe_path --wf-tcp=443 --wf-udp=443,50000-65535 --filter-udp=443 --hostlist=`"`"$path\$winws_folder\list-discord-scpsl.txt`"`" --dpi-desync=fake --dpi-desync-udplen-increment=10 --dpi-desync-repeats=6 --dpi-desync-udplen-pattern=0xDEADBEEF --dpi-desync-fake-quic=`"`"$path\$winws_folder\quic_initial_www_google_com.bin`"`" --new --filter-udp=50000-65535 --dpi-desync=fake,tamper --dpi-desync-any-protocol --dpi-desync-fake-quic=`"`"$path\$winws_folder\quic_initial_www_google_com.bin`"`" --new --filter-tcp=443 --hostlist=`"`"$path\$winws_folder\list-discord-scpsl.txt`"`" --dpi-desync=fake,split2 --dpi-desync-autottl=2 --dpi-desync-fooling=md5sig --dpi-desync-fake-tls=`"`"$path\$winws_folder\tls_clienthello_www_google_com.bin`"`"`"")
-	[void](sc.exe config "WTH Winws" start= auto)
-	[void](sc.exe description "WTH Winws" "Passive Deep Packet Inspection blocker and Active DPI circumvention utility. Affects SCP:SL and Discord domains only.")
+	$binaryPathName = "$exe_path --wf-tcp=443 --wf-udp=443,50000-65535 --filter-udp=443 --hostlist=`"$path\$winws_folder\list-discord-scpsl.txt`" --dpi-desync=fake --dpi-desync-udplen-increment=10 --dpi-desync-repeats=6 --dpi-desync-udplen-pattern=0xDEADBEEF --dpi-desync-fake-quic=`"$path\$winws_folder\quic_initial_www_google_com.bin`" --new --filter-udp=50000-65535 --dpi-desync=fake,tamper --dpi-desync-any-protocol --dpi-desync-fake-quic=`"$path\$winws_folder\quic_initial_www_google_com.bin`" --new --filter-tcp=443 --hostlist=`"$path\$winws_folder\list-discord-scpsl.txt`" --dpi-desync=fake,split2 --dpi-desync-autottl=2 --dpi-desync-fooling=md5sig --dpi-desync-fake-tls=`"$path\$winws_folder\tls_clienthello_www_google_com.bin`""
+	[void](New-Service -Name "WTH Winws" -BinaryPathName $binaryPathName -StartupType Automatic -Description "Обход DPI by Welcome To Hell")
 	
 	Write-Output "Запускаем сервис WTH Winws"
-	[void](sc.exe start "WTH Winws")
+	[void](Start-Service -Name "WTH Winws")
 	
 	$result = [System.Windows.Forms.MessageBox]::Show('Скрипт успешно установил сервис WTH Winws.' + [System.Environment]::NewLine + [System.Environment]::NewLine + "Проверьте соединение с Discord и список серверов SCP:SL.", "WTH SCP:SL Winws" , [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
 }
