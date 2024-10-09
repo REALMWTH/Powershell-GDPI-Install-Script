@@ -13,7 +13,7 @@ function DeleteLeftoverFiles
 
 # Set title and advertisement
 $host.ui.RawUI.WindowTitle = "Welcome To Hell SCP:SL Winws downloader and installer"
-Write-Host "Загрузчик и инсталлятор сервиса Winws для всех доменов SCP:SL и Discord от " -ForegroundColor white -nonewline
+Write-Host "Загрузчик и инсталлятор сервиса Winws для всех доменов SCP:SL, Discord и YouTube от " -ForegroundColor white -nonewline
 Write-Host "Welcome To Hell" -ForegroundColor red
 Write-Host "https://discord.scpsl.ru" -ForegroundColor white -BackgroundColor darkred
 Write-Host ""
@@ -72,7 +72,7 @@ if ($winws_service_exists.Length -gt 0) {
 	}
 }
 
-$result = [System.Windows.Forms.MessageBox]::Show('Скрипт установит сервис WTH Winws для исправления проблемы с соединением с интернет-ресурсами игры SCP: Secret Laboratory, а также восстановит работоспособность Discord.' + [System.Environment]::NewLine + [System.Environment]::NewLine + 'Установить?' , "WTH SCP:SL Winws" , [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Question)
+$result = [System.Windows.Forms.MessageBox]::Show('Скрипт установит сервис WTH Winws для исправления проблемы с соединением с интернет-ресурсами игры SCP: Secret Laboratory, а также восстановит работоспособность Discord и YouTube.' + [System.Environment]::NewLine + [System.Environment]::NewLine + 'Установить?' , "WTH SCP:SL Winws" , [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Question)
 if ($result -eq 'Yes') {
 
 	$path = Split-Path $path -Parent
@@ -99,8 +99,8 @@ if ($result -eq 'Yes') {
 	if (Test-Path "$unpacked_folder") {[void](Remove-Item "$unpacked_folder" -Confirm:$False -Force -Recurse)}
 	if (Test-Path "$path\$winws_archive_name") {[void](Remove-Item "$path\$winws_archive_name" -Confirm:$False -Force)}
 	
-	# Download SCP:SL and Discord domains list File
-	Write-Output "Скачиваем whitelist доменов SCP: Secret Laboratory и Discord"
+	# Download SCP:SL, Discord and YouTube domains list File
+	Write-Output "Скачиваем whitelist доменов SCP: Secret Laboratory, Discord и YouTube"
 		
 	Start-BitsTransfer -Source 'https://raw.githubusercontent.com/REALMWTH/Powershell-GDPI-Install-Script/refs/heads/main/list-general.txt' -Destination "$path\$winws_folder"
 		
@@ -121,7 +121,7 @@ if ($result -eq 'Yes') {
 	Write-Output "Запускаем сервис WTH Winws"
 	[void](Start-Service -Name "WTH Winws")
 	
-	$result = [System.Windows.Forms.MessageBox]::Show('Скрипт успешно установил сервис WTH Winws.' + [System.Environment]::NewLine + [System.Environment]::NewLine + "Проверьте соединение с Discord и список серверов SCP:SL.", "WTH SCP:SL Winws" , [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
+	$result = [System.Windows.Forms.MessageBox]::Show('Скрипт успешно установил сервис WTH Winws.' + [System.Environment]::NewLine + [System.Environment]::NewLine + "Проверьте соединение с Discord, YouTube и список серверов SCP:SL.", "WTH SCP:SL Winws" , [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
 }
 if ($result -eq 'No') {
 	exit
