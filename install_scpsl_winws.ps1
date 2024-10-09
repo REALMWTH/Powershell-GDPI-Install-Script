@@ -102,7 +102,7 @@ if ($result -eq 'Yes') {
 	# Download SCP:SL and Discord domains list File
 	Write-Output "Скачиваем whitelist доменов SCP: Secret Laboratory и Discord"
 		
-	Start-BitsTransfer -Source 'https://raw.githubusercontent.com/REALMWTH/Powershell-GDPI-Install-Script/refs/heads/main/list-discord-scpsl.txt' -Destination "$path\$winws_folder"
+	Start-BitsTransfer -Source 'https://raw.githubusercontent.com/REALMWTH/Powershell-GDPI-Install-Script/refs/heads/main/list-general.txt' -Destination "$path\$winws_folder"
 		
 	# Install Service
 	Write-Output "Устанавливаем сервис WTH Winws"
