@@ -1,5 +1,7 @@
 DPI Bypass for Discord, YouTube and SCP:SL domains
 
+[Installation tutorial](https://telegra.ph/Obhod-blokirovki-Discord-10-09-2)
+
 Made for Official Russian SCP:SL Server
 https://scpsl.ru/
 
